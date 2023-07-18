@@ -3,10 +3,10 @@ import path from "path";
 import mongoose from "mongoose";
 import cookieParser from "cookie-parser";
 mongoose
-.connect("mongodb://127.0.0.1:27017/backend", {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
+  .connect("mongodb://127.0.0.1:27017/backend", {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
   .then(() => {
     console.log("mango is ready to eat");
   })
@@ -14,11 +14,10 @@ mongoose
     console.log(err);
   });
 
-
-  const mongooseSchema = new mongoose.Schema({
-    name:String,
-    email:String,
-  });
+const mongooseSchema = new mongoose.Schema({
+  name: String,
+  email: String,
+});
 const Message = mongoose.model("Message", mongooseSchema);
 const app = express();
 
@@ -30,19 +29,17 @@ app.use(cookieParser());
 app.set("view engine", "ejs");
 
 app.get("/", (req, res) => {
-  const {token} = req.cookies;
-  if(token){
-
-  }else{
+  const { token } = req.cookies;
+  if (token) {
+    res.render("logout");
+  } else {
     res.render("login");
   }
-  
-
 });
 
-app.get("/add", async(req, res) => {
-  await Message.create({name: "ai", email: "haga@hhh"});
-  res.send("Success")
+app.get("/add", async (req, res) => {
+  await Message.create({ name: "ai", email: "haga@hhh" });
+  res.send("Success");
   console.log("working");
 });
 
@@ -51,18 +48,26 @@ app.get("/success", (req, res) => {
 });
 
 app.post("/", (req, res) => {
-   Message.create({name: req.body.name, email: req.body.email}).then(() => {
-     res.redirect("/")
-     console.log("working");
-   })
+  Message.create({ name: req.body.name, email: req.body.email }).then(() => {
+    res.redirect("/");
+    console.log("working");
+  });
 });
 
 app.post("/login", (req, res) => {
   res.cookie("token", "maiaagyo", {
-    httpOnly:true, expires:new Date(Date.now() + 60*1000),
+    httpOnly: true,
+    expires: new Date(Date.now() + 60 * 1000),
   });
   res.redirect("/");
-})
+});
+app.get("/logout", (req, res) => {
+  res.cookie("token", null, {
+    httpOnly: true,
+    expires: new Date(Date.now()),
+  });
+  res.redirect("/");
+});
 
 app.listen(3000, (req, res) => {
   console.log("app is working");
