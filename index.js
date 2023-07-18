@@ -1,6 +1,7 @@
 import express from "express";
 import path from "path";
 import mongoose from "mongoose";
+import cookieParser from "cookie-parser";
 mongoose
 .connect("mongodb://127.0.0.1:27017/backend", {
   useNewUrlParser: true,
@@ -24,12 +25,19 @@ const app = express();
 // using static folder
 app.use(express.static(path.join(path.resolve(), "public")));
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 // Setting up the view engine
 app.set("view engine", "ejs");
 
 app.get("/", (req, res) => {
-  console.log(req.cookies);
-  res.render("login");
+  const {token} = req.cookies;
+  if(token){
+
+  }else{
+    res.render("login");
+  }
+  
+
 });
 
 app.get("/add", async(req, res) => {
