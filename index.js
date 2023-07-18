@@ -3,6 +3,8 @@ import path from "path";
 import mongoose from "mongoose";
 import cookieParser from "cookie-parser";
 import jwt from "jsonwebtoken";
+import { log } from "console";
+// import bcrypt from "bcrypt";
 const app = express();
 // connected the nodejs with mongodb
 mongoose
@@ -37,7 +39,7 @@ const isAuthenticated = async (req, res, next) => {
   const { token } = req.cookies;
   if (token) {
     const decoded = jwt.verify(token, "jjhjhjxxxhjchuiufiuiufihugy");
-    req.user = await User.findOne({_id:decoded._id});
+    req.user = await User.findOne({ _id: decoded._id });
     next();
   } else res.render("login");
 };
@@ -59,10 +61,17 @@ app.get("/login", (req, res) => {
 // login handler
 app.post("/login", async (req, res) => {
   const { email, password } = req.body;
-  let user = await User.findOne({email:email });
+
+  let user = await User.findOne({ email: email });
+  console.log(user);
   if (!user) return res.redirect("/register");
+  console.log(email, password);
   const isMath = user.password === password;
-  if (!isMath) return res.render("login", { message: "Password is wrong" });
+  console.log(isMath);
+  if (isMath === false) {
+    res.render("login");
+    return;
+  }
 
   const token = jwt.sign({ _id: user.id }, "jjhjhjxxxhjchuiufiuiufihugy");
   res.cookie("token", token, {
@@ -75,15 +84,16 @@ app.post("/login", async (req, res) => {
 // register page
 app.post("/register", async (req, res) => {
   const { name, email, password } = req.body;
-  let user = await User.findOne({email:email});
+  let user = await User.findOne({ email: email });
   if (user) {
     return res.redirect("/login");
   } else {
+    // const hashPassword = await bcrypt.sign(password, 10);
+    // console.log(hashPassword);
     const user = await User.create({ name, email, password });
     res.redirect("/login");
   }
 });
-
 // logout handler
 app.get("/logout", (req, res) => {
   res.cookie("token", null, {
