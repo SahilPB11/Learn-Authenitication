@@ -2,8 +2,7 @@ import express from "express";
 import path from "path";
 import mongoose from "mongoose";
 import cookieParser from "cookie-parser";
-import jwt from "jsonwebtoken"
-import { log } from "console";
+import jwt from "jsonwebtoken";
 const app = express();
 // connected the nodejs with mongodb
 mongoose
@@ -22,6 +21,7 @@ mongoose
 const userSchema = new mongoose.Schema({
   name: String,
   email: String,
+  password: String,
 });
 const User = mongoose.model("User", userSchema);
 
@@ -33,48 +33,55 @@ app.use(cookieParser());
 app.set("view engine", "ejs");
 
 // making a function to chek is session in work or not
-const isAuthenticated = async(req, res, next) => {
+const isAuthenticated = async (req, res, next) => {
   const { token } = req.cookies;
-  if (token){
-    const decoded = jwt.verify(token,"jixjksdjcjjkdjkckjdxjcjkjkk");
-    req.user = await User.findById(decoded._id);
+  if (token) {
+    const decoded = jwt.verify(token, "jjhjhjxxxhjchuiufiuiufihugy");
+    req.user = await User.findOne({_id:decoded._id});
     next();
-  }
-  else res.render("login");
+  } else res.render("login");
 };
 
 app.get("/", isAuthenticated, (req, res) => {
-  res.render("logout", {name: req.user.name});
+  res.render("logout", { name: req.user.name });
 });
 
-// register 
+// register
 app.get("/register", (req, res) => {
   res.render("register");
 });
 
-// login handler 
-app.post("/login", async(req, res) => {
-  const { name, email } = req.body;
-  let user = await User.findOne({email});
-  if(!user){
-    return res.redirect("/register");0
-  }else{
-    user = await User.findOne({name,email});
+// login
+app.get("/login", (req, res) => {
+  res.render("login");
+});
 
-    const userToken = jwt.sign({_id:user._id}, "jixjksdjcjjkdjkckjdxjcjkjkk");
-      res.cookie("token", userToken, {
-        httpOnly: true,
-        expires: new Date(Date.now() + 60 * 1000),
-      });
-      res.redirect("/");
-  }
+// login handler
+app.post("/login", async (req, res) => {
+  const { email, password } = req.body;
+  let user = await User.findOne({email:email });
+  if (!user) return res.redirect("/register");
+  const isMath = user.password === password;
+  if (!isMath) return res.render("login", { message: "Password is wrong" });
+
+  const token = jwt.sign({ _id: user.id }, "jjhjhjxxxhjchuiufiuiufihugy");
+  res.cookie("token", token, {
+    httpOnly: true,
+    expires: new Date(Date.now() + 60 * 1000),
+  });
+  res.redirect("/");
 });
 
 // register page
-app.post("/register", async(req, res) => {
-  const { name, email } = req.body;
-  const user = await User.create({name,email});
-  res.redirect("/");
+app.post("/register", async (req, res) => {
+  const { name, email, password } = req.body;
+  let user = await User.findOne({email:email});
+  if (user) {
+    return res.redirect("/login");
+  } else {
+    const user = await User.create({ name, email, password });
+    res.redirect("/login");
+  }
 });
 
 // logout handler
@@ -83,7 +90,7 @@ app.get("/logout", (req, res) => {
     httpOnly: true,
     expires: new Date(Date.now()),
   });
-  res.redirect("/");
+  res.redirect("/login");
 });
 
 // server connection
