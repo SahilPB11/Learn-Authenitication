@@ -3,7 +3,6 @@ import path from "path";
 import mongoose from "mongoose";
 import cookieParser from "cookie-parser";
 import jwt from "jsonwebtoken";
-// const bcrypt = require("bcrypt");
 import bcrypt from "bcrypt";
 const app = express();
 // connected the nodejs with mongodb
@@ -41,7 +40,9 @@ const isAuthenticated = async (req, res, next) => {
     const decoded = jwt.verify(token, "jjhjhjxxxhjchuiufiuiufihugy");
     req.user = await User.findOne({ _id: decoded._id });
     next();
-  } else res.render("login");
+  } else{
+    res.redirect("/login")
+  }
 };
 
 app.get("/", isAuthenticated, (req, res) => {
@@ -64,17 +65,16 @@ app.post("/login", async (req, res) => {
 
   let user = await User.findOne({ email: email });
   if (!user) return res.redirect("/register");
-  const isMath = await bcrypt.compare(req.body.password, user.password);
-  if (isMath === false) {
-    res.render("login", { email: user.email, message: "password is wrong" });
-    return;
-  }
+  const isMath = await bcrypt.compare(password, user.password);
+  if(isMath === false) return res.render("login2", { email:email, message: "password is wrong" });
+
   const token = jwt.sign({ _id: user._id }, "jjhjhjxxxhjchuiufiuiufihugy");
   res.cookie("token", token, {
     httpOnly: true,
     expires: new Date(Date.now() + 60 * 1000),
   });
   res.redirect("/");
+ 
 });
 
 // register page
@@ -84,9 +84,8 @@ app.post("/register", async (req, res) => {
   if (user) {
     return res.redirect("/login");
   } else {
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(req.body.password, salt);
-    const user = await User.create({ name, email, password: hashedPassword });
+    const hashPassword = await bcrypt.hash(password, 10);
+    const user = await User.create({ name, email, password : hashPassword});
     res.redirect("/login");
   }
 });
