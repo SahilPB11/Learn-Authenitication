@@ -3,8 +3,8 @@ import path from "path";
 import mongoose from "mongoose";
 import cookieParser from "cookie-parser";
 import jwt from "jsonwebtoken";
-import { log } from "console";
-// import bcrypt from "bcrypt";
+// const bcrypt = require("bcrypt");
+import bcrypt from "bcrypt";
 const app = express();
 // connected the nodejs with mongodb
 mongoose
@@ -63,17 +63,13 @@ app.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
   let user = await User.findOne({ email: email });
-  console.log(user);
   if (!user) return res.redirect("/register");
-  console.log(email, password);
-  const isMath = user.password === password;
-  console.log(isMath);
+  const isMath = await bcrypt.compare(req.body.password, user.password);
   if (isMath === false) {
-    res.render("login");
+    res.render("login", { email: user.email, message: "password is wrong" });
     return;
   }
-
-  const token = jwt.sign({ _id: user.id }, "jjhjhjxxxhjchuiufiuiufihugy");
+  const token = jwt.sign({ _id: user._id }, "jjhjhjxxxhjchuiufiuiufihugy");
   res.cookie("token", token, {
     httpOnly: true,
     expires: new Date(Date.now() + 60 * 1000),
@@ -88,9 +84,9 @@ app.post("/register", async (req, res) => {
   if (user) {
     return res.redirect("/login");
   } else {
-    // const hashPassword = await bcrypt.sign(password, 10);
-    // console.log(hashPassword);
-    const user = await User.create({ name, email, password });
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(req.body.password, salt);
+    const user = await User.create({ name, email, password: hashedPassword });
     res.redirect("/login");
   }
 });
